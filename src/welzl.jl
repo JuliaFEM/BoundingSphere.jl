@@ -1,5 +1,3 @@
-struct WelzlMTF <: MiniballAlgorithm end
-
 const F = Float64
 const P = Vector{F}
 
@@ -34,7 +32,7 @@ mutable struct GaertnerBdry <: BoundaryDevice
     projector::ProjectorStack
 end
 
-function create_boundary_device(pts, alg::WelzlMTF)
+function create_boundary_device(pts, alg)
     projector = ProjectorStack([])
     GaertnerBdry([],[],projector)
 end
@@ -46,12 +44,12 @@ function npoints(b::GaertnerBdry)
     return length(b.centers)
 end
 
-function Base.push!(b::GaertnerBdry, pt)
+function push_if_stable!(b::GaertnerBdry, pt)
     if npoints(b) == 0
         push!(b.square_radii, zero(eltype(pt)))
         push!(b.centers, pt)
         dim = length(pt)
-        return b
+        return true
     end
 
     q0 = first(b.centers)
@@ -63,29 +61,30 @@ function Base.push!(b::GaertnerBdry, pt)
     M = b.projector
     Qm_bar = M*Qm
 
+    # TODO cleanup these formulas
     e = sqdist(Qm, C) - r2
     z = 2*sqdist(Qm, Qm_bar)
+    isstable = abs(z) > eps(F) # TODO small z
+    if isstable
 
-    @assert abs(z) > eps(F) # TODO small z
+        center_new  = center + (e/z) * (Qm - Qm_bar)
+        r2new = r2 + (e^2)/(2z)
 
-    center_new  = center + (e/z) * (Qm - Qm_bar)
-    r2new = r2 + (e^2)/(2z)
+        residue = Qm - Qm_bar
+        residue_norm = residue / norm(residue)
+        push!(b.projector, residue / norm(residue))
 
-    residue = Qm - Qm_bar
-    residue_norm = residue / norm(residue)
-    push!(b.projector, residue / norm(residue))
-
-    push!(b.centers, center_new)
-    push!(b.square_radii, r2new)
-    
-    b
+        push!(b.centers, center_new)
+        push!(b.square_radii, r2new)
+    end
+    isstable
 end
 
 function Base.pop!(b::GaertnerBdry)
-    @argcheck npoints(b) > 0
+    n = npoints(b)
     pop!(b.centers)
     pop!(b.square_radii)
-    if npoints(b) > 0 # npoints has been poped here
+    if n >= 2
         pop!(b.projector)
     end
     b
@@ -96,22 +95,6 @@ function get_ball(b::GaertnerBdry)
     c = b.centers[end]
     r2 = b.square_radii[end]
     SqBall(c,r2)
-end
-
-function prefix(pts, i)
-    inds = eachindex(pts)
-    index = first(inds) : i
-    view(pts, index)
-end
-
-function move_to_front!(pts, i)
-    pt = pts[i]
-    for j in prefix(pts, i)
-        qt = pts[i]
-        pts[i] = pt
-        pt = qt
-    end
-    pts
 end
 
 function mb!(pts, bdry::BoundaryDevice, alg::WelzlMTF)
@@ -129,20 +112,72 @@ function mb!(pts, bdry::BoundaryDevice, alg::WelzlMTF)
     else
         ball = get_ball(bdry)
     end
-    if npoints(bdry) == dim + 1
-        return ball
+
+    support_count = npoints(bdry)
+    if support_count == dim + 1
+        return ball, support_count
     end
 
     for i in eachindex(pts)
         pt = pts[i]
         if !isinside(pt, ball)
             pts_i = prefix(pts, i-1)
-            push!(bdry, pt)
-            ball = mb!(pts_i, bdry, alg)
-            @assert isinside(pt, ball, rtol=1e-2)
-            pop!(bdry)
-            move_to_front!(pts, i)
+            isstable = push_if_stable!(bdry, pt)
+            if isstable
+                ball, support_count = mb!(pts_i, bdry, alg)
+                @assert isinside(pt, ball, rtol=1e-2)
+                pop!(bdry)
+                move_to_front!(pts, i)
+            end
         end
     end
-    ball
+    ball, support_count
+end
+
+function find_max_excess(ball, pts, k1)
+    T = eltype(first(pts))
+    e_max = T(-Inf)
+    k_max = k1 -1
+    for k in k1:length(pts)
+        pt = pts[k]
+        e = sqdist(pt, center(ball)) - sqradius(ball)
+        if  e > e_max
+            e_max = e
+            k_max = k
+        end
+    end
+    e_max, k_max
+end
+
+function mb!(pts, alg::WelzlPivot)
+    t = 1
+    alg_inner = WelzlMTF()
+    bdry = create_boundary_device(pts, alg_inner)
+    @assert npoints(bdry) == 0
+    ball, s = mb!(prefix(pts,t), bdry, alg_inner)
+    for i in 1:alg.max_iterations
+        e, k = find_max_excess(ball, pts, t+1)
+        # @assert s <= t
+        if e > 0
+            @assert t < k
+            # @show e
+            # @show i
+            pt = pts[k]
+            push_if_stable!(bdry, pt)
+            ball, s2 = mb!(prefix(pts,s), bdry, alg_inner)
+            @assert isinside(pt, ball, rtol=1e-2)
+            @assert all([isinside(pt, ball, rtol=1e-2) 
+                         for pt in prefix(pts,s)])
+
+            pop!(bdry)
+            @assert npoints(bdry) == 0
+            move_to_front!(pts,k)
+            t = s + 1
+            s = s2 + 1
+        else
+            # println("break after $i iterations")
+            return ball
+        end
+    end
+    return ball
 end
