@@ -16,19 +16,19 @@ end
 
 function miniball!(pts, alg::WelzlMTF=WelzlMTF())
     bdry = create_boundary_device(pts, alg)
-    ball, support_count = mb!(pts, bdry, alg)
+    ball, support_count = welzl!(pts, bdry, alg)
     r = radius(ball)
     c = center(ball)
     c, r
 end
 
 function miniball!(pts, alg::MiniballAlgorithm)
-    ball = mb!(pts, alg)
+    ball = welzl!(pts, alg)
     r = radius(ball)
     c = center(ball)
     c, r
 end
 
-function miniball(pts, alg::MiniballAlgorithm=WelzlMTF())
+@noinline function miniball(pts, alg::MiniballAlgorithm=WelzlMTF())
     miniball!(copy(pts), alg)
 end

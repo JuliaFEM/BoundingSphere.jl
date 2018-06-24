@@ -9,6 +9,13 @@ function isinside(pt, ball::SqBall; atol=0, rtol=0)
     r2 <= R2 || isapprox(r2, R2;atol=atol^2,rtol=rtol^2)
 end
 
+function allinside(pts, ball; kw...)
+    for pt in pts
+        isinside(pt, ball; kw...) || return false
+    end
+    true
+end
+
 center(b::SqBall) = b.center
 radius(b::SqBall) = sqrt(b.sqradius)
 sqradius(b::SqBall) = b.sqradius

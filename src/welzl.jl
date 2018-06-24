@@ -22,7 +22,28 @@ function Base.:*(p::ProjectorStack, v::AbstractVector)
     ret
 end
 
+"""
+    BoundaryDevice
+
+Finds unique spheres determined by prescribed affine independent
+boundary points. In the welzl algorithm this problem needs to be solved
+in series, where points are pushed and popped from to the boundary.
+
+Subtypes must implement the following interface:
+
+* push_if_stable!(device, pt)::Bool :
+* pop!(device): Remove last point from the boundary.
+* get_ball(device)::SqBall : Get the last ball from the device.
+"""
 abstract type BoundaryDevice end
+
+"""
+    GaertnerBdry
+
+BoundaryDevice that corresponds to M_B in Section 4 of Gaertners paper.
+
+See also: [BoundaryDevice](@ref)
+"""
 mutable struct GaertnerBdry{P<:AbstractVector,
                             F<:AbstractFloat} <: BoundaryDevice
     centers::Vector{P}
@@ -62,20 +83,20 @@ function push_if_stable!(b::GaertnerBdry, pt)
     Qm = pt - q0
     M = b.projector
     Qm_bar = M*Qm
+    residue = Qm - Qm_bar
 
-    # TODO cleanup these formulas
     e = sqdist(Qm, C) - r2
-    z = 2*sqdist(Qm, Qm_bar)
+    z = 2*sqnorm(residue)
+
+    # should we use norm(residue) instead of z here?
+    # seems more intuitive, OTOH z is used in the paper
     isstable = abs(z) > eps(eltype(pt))
     if isstable
 
-        center_new  = center + (e/z) * (Qm - Qm_bar)
+        center_new  = center + (e/z) * residue
         r2new = r2 + (e^2)/(2z)
 
-        residue = Qm - Qm_bar
-        residue_norm = residue / norm(residue)
         push!(b.projector, residue / norm(residue))
-
         push!(b.centers, center_new)
         push!(b.square_radii, r2new)
     end
@@ -99,7 +120,7 @@ function get_ball(b::GaertnerBdry)
     SqBall(c,r2)
 end
 
-function mb!(pts, bdry::BoundaryDevice, alg::WelzlMTF)
+function welzl!(pts, bdry::BoundaryDevice, alg::WelzlMTF)
 
     dim = if isempty(pts)
         length(length(first(bdry.centers)))
@@ -126,7 +147,7 @@ function mb!(pts, bdry::BoundaryDevice, alg::WelzlMTF)
             pts_i = prefix(pts, i-1)
             isstable = push_if_stable!(bdry, pt)
             if isstable
-                ball, support_count = mb!(pts_i, bdry, alg)
+                ball, support_count = welzl!(pts_i, bdry, alg)
                 @assert isinside(pt, ball, rtol=1e-2)
                 pop!(bdry)
                 move_to_front!(pts, i)
@@ -151,20 +172,20 @@ function find_max_excess(ball, pts, k1)
     e_max, k_max
 end
 
-function mb!(pts, alg::WelzlPivot)
+function welzl!(pts, alg::WelzlPivot)
     t = 1
     alg_inner = WelzlMTF()
-    bdry = create_boundary_device(pts, alg_inner)
+    bdry = create_boundary_device(pts, alg)
     @assert npoints(bdry) == 0
-    ball, s = mb!(prefix(pts,t), bdry, alg_inner)
+    ball, s = welzl!(prefix(pts,t), bdry, alg_inner)
     for i in 1:alg.max_iterations
         e, k = find_max_excess(ball, pts, t+1)
         # @assert s <= t
         if e > 0
-    #         @assert t < k
+            @assert t < k
             pt = pts[k]
             push_if_stable!(bdry, pt)
-            ball, s2 = mb!(prefix(pts,s), bdry, alg_inner)
+            ball, s2 = welzl!(prefix(pts,s), bdry, alg_inner)
             @assert isinside(pt, ball, rtol=1e-2)
 
             pop!(bdry)
