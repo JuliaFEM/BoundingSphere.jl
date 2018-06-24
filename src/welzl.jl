@@ -1,7 +1,4 @@
-const F = Float64
-const P = Vector{F}
-
-struct ProjectorStack 
+struct ProjectorStack{P <: AbstractVector}
     # matrix that is decomposed into Σ v_i ⊗ v_i* for
     # an orthonormal system v_i
     vs::Vector{P}
@@ -26,15 +23,20 @@ function Base.:*(p::ProjectorStack, v::AbstractVector)
 end
 
 abstract type BoundaryDevice end
-mutable struct GaertnerBdry <: BoundaryDevice
+mutable struct GaertnerBdry{P<:AbstractVector,
+                            F<:AbstractFloat} <: BoundaryDevice
     centers::Vector{P}
     square_radii::Vector{F} # square radii
-    projector::ProjectorStack
+    projector::ProjectorStack{P}
 end
 
 function create_boundary_device(pts, alg)
-    projector = ProjectorStack([])
-    GaertnerBdry([],[],projector)
+    P = eltype(pts)
+    F = eltype(P)
+    projector = ProjectorStack(P[])
+    centers = P[]
+    square_radii = F[]
+    GaertnerBdry(centers, square_radii, projector)
 end
 
 function npoints(b::GaertnerBdry)
@@ -64,7 +66,7 @@ function push_if_stable!(b::GaertnerBdry, pt)
     # TODO cleanup these formulas
     e = sqdist(Qm, C) - r2
     z = 2*sqdist(Qm, Qm_bar)
-    isstable = abs(z) > eps(F) # TODO small z
+    isstable = abs(z) > eps(eltype(pt))
     if isstable
 
         center_new  = center + (e/z) * (Qm - Qm_bar)
@@ -159,15 +161,11 @@ function mb!(pts, alg::WelzlPivot)
         e, k = find_max_excess(ball, pts, t+1)
         # @assert s <= t
         if e > 0
-            @assert t < k
-            # @show e
-            # @show i
+    #         @assert t < k
             pt = pts[k]
             push_if_stable!(bdry, pt)
             ball, s2 = mb!(prefix(pts,s), bdry, alg_inner)
             @assert isinside(pt, ball, rtol=1e-2)
-            @assert all([isinside(pt, ball, rtol=1e-2) 
-                         for pt in prefix(pts,s)])
 
             pop!(bdry)
             @assert npoints(bdry) == 0
@@ -175,7 +173,6 @@ function mb!(pts, alg::WelzlPivot)
             t = s + 1
             s = s2 + 1
         else
-            # println("break after $i iterations")
             return ball
         end
     end

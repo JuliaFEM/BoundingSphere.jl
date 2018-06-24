@@ -1,6 +1,6 @@
-struct SqBall{C,R}
-    center::C
-    sqradius::R
+struct SqBall{P,F}
+    center::P
+    sqradius::F
 end
 
 function isinside(pt, ball::SqBall; atol=0, rtol=0)

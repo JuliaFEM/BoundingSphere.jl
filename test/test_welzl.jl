@@ -1,3 +1,4 @@
+using StaticArrays
 
 function create_ball_points(npoints, dim; p_boundary=1, p_rep=1/sqrt(npoints))
     P = SVector{dim, Float64}
@@ -53,6 +54,28 @@ end
             random_test(WelzlPivot(), npoints, dim,
                         p_rep=sqrt(npoints),
                         p_boundary=0.5)
+        end
+    end
+end
+
+@testset "Generic type support" begin
+    inputs = []
+    for F in subtypes(AbstractFloat)
+        F == Float16 && continue  # Float16 fires assertions
+        pts = Vector{F}[F.(randn(3)) for _ in 1:5]
+        push!(inputs, pts)
+        pts = [F.(@SVector(randn(3))) for _ in 1:5]
+        push!(inputs, pts)
+    end
+    for A in subtypes(MB.MiniballAlgorithm)
+        for pts in inputs
+            alg = A()
+            c, r = miniball(pts, alg)
+            P = eltype(pts)
+            F = eltype(P)
+            @test typeof(c) == P
+            @test typeof(r) == F
+            @inferred miniball(pts, alg)
         end
     end
 end

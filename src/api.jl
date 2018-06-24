@@ -1,6 +1,7 @@
 export miniball
 export WelzlMTF
 export WelzlPivot
+export MiniballAlgorithm
 
 abstract type MiniballAlgorithm end
 
