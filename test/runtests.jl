@@ -8,5 +8,6 @@ else
     using Test
 end
 
+include("test_broken.jl")
 include("test_util.jl")
 include("test_welzl.jl")
