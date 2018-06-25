@@ -25,3 +25,10 @@ end
     MB.move_to_front!(pts, 4)
     @test pts == ["d", "a", "b", "c"]
 end
+
+@testset "isinside" begin
+    @test MB.isinside([0.], MB.SqBall([0.], 0.))
+    @test !MB.isinside([0.], MB.SqBall([NaN], 0.))
+    @test !MB.isinside([0.], MB.SqBall([0.], NaN))
+
+end

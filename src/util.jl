@@ -15,3 +15,7 @@ function move_to_front!(pts, i)
     end
     pts
 end
+
+function leq_approx(x,y;kw...)
+    x < y || isapprox(x,y;kw...)
+end

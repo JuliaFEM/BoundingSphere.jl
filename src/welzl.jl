@@ -34,8 +34,12 @@ Subtypes must implement the following interface:
 * push_if_stable!(device, pt)::Bool :
 * pop!(device): Remove last point from the boundary.
 * get_ball(device)::SqBall : Get the last ball from the device.
+* npoints(device)::Int
+
 """
 abstract type BoundaryDevice end
+
+Base.isempty(b::BoundaryDevice) = npoints(b) == 0
 
 """
     GaertnerBdry
@@ -47,8 +51,11 @@ See also: [BoundaryDevice](@ref)
 mutable struct GaertnerBdry{P<:AbstractVector,
                             F<:AbstractFloat} <: BoundaryDevice
     centers::Vector{P}
-    square_radii::Vector{F} # square radii
+    square_radii::Vector{F}
+    # projection onto of affine space spanned by points
+    # shifted such that first point becomes origin
     projector::ProjectorStack{P}
+    empty_center::P # center of ball spanned by empty boundary
 end
 
 function create_boundary_device(pts, alg)
@@ -57,7 +64,8 @@ function create_boundary_device(pts, alg)
     projector = ProjectorStack(P[])
     centers = P[]
     square_radii = F[]
-    GaertnerBdry(centers, square_radii, projector)
+    empty_center = F(NaN)*first(pts)
+    GaertnerBdry(centers, square_radii, projector, empty_center)
 end
 
 function npoints(b::GaertnerBdry)
@@ -90,7 +98,7 @@ function push_if_stable!(b::GaertnerBdry, pt)
 
     # should we use norm(residue) instead of z here?
     # seems more intuitive, OTOH z is used in the paper
-    isstable = abs(z) > eps(eltype(pt))
+    isstable = abs(z) > eps(eltype(pt)) * r2
     if isstable
 
         center_new  = center + (e/z) * residue
@@ -114,30 +122,29 @@ function Base.pop!(b::GaertnerBdry)
 end
 
 function get_ball(b::GaertnerBdry)
-    @argcheck npoints(b) > 0
-    c = b.centers[end]
-    r2 = b.square_radii[end]
+    if npoints(b) == 0
+        c = b.empty_center
+        r2 = zero(eltype(c))
+    else
+        c = b.centers[end]
+        r2 = b.square_radii[end]
+    end
     SqBall(c,r2)
 end
 
+function ismaxlength(b::GaertnerBdry)
+    dim = length(b.empty_center)
+    npoints(b) == dim + 1
+end
+
 function welzl!(pts, bdry::BoundaryDevice, alg::WelzlMTF)
+    bdry_len = npoints(bdry)
 
-    dim = if isempty(pts)
-        length(length(first(bdry.centers)))
-    else
-        length(first(pts))
-    end
+    support_count = 0
 
-    if npoints(bdry) == 0
-        c = first(pts)
-        r2 = zero(eltype(c))
-        ball = SqBall(c,r2)
-    else
-        ball = get_ball(bdry)
-    end
-
-    support_count = npoints(bdry)
-    if support_count == dim + 1
+    ball = get_ball(bdry)
+    if ismaxlength(bdry)
+        support_count = 0
         return ball, support_count
     end
 
@@ -147,13 +154,16 @@ function welzl!(pts, bdry::BoundaryDevice, alg::WelzlMTF)
             pts_i = prefix(pts, i-1)
             isstable = push_if_stable!(bdry, pt)
             if isstable
-                ball, support_count = welzl!(pts_i, bdry, alg)
+                ball, s = welzl!(pts_i, bdry, alg)
                 @assert isinside(pt, ball, rtol=1e-2)
                 pop!(bdry)
                 move_to_front!(pts, i)
+                support_count = s + 1
             end
         end
     end
+
+    @assert bdry_len == npoints(bdry)
     ball, support_count
 end
 
@@ -172,30 +182,62 @@ function find_max_excess(ball, pts, k1)
     e_max, k_max
 end
 
-function welzl!(pts, alg::WelzlPivot)
+function welzl!(pts, bdry, alg::WelzlPivot)
     t = 1
     alg_inner = WelzlMTF()
-    bdry = create_boundary_device(pts, alg)
     @assert npoints(bdry) == 0
     ball, s = welzl!(prefix(pts,t), bdry, alg_inner)
     for i in 1:alg.max_iterations
         e, k = find_max_excess(ball, pts, t+1)
-        # @assert s <= t
-        if e > 0
+
+        P = eltype(pts)
+        F = eltype(P)
+        if e >  sqrt(eps(F)) # 0
             @assert t < k
             pt = pts[k]
             push_if_stable!(bdry, pt)
-            ball, s2 = welzl!(prefix(pts,s), bdry, alg_inner)
-            @assert isinside(pt, ball, rtol=1e-2)
+            ball_new, s_new = welzl!(prefix(pts,s), bdry, alg_inner)
+            # @assert isinside(pt, ball_new, rtol=1e-6)
+            if !leq_approx(radius(ball), radius(ball_new))
+                @show e
+                @show radius(ball)
+                @show radius(ball_new)
+                @show i
+                @show k
+                @show s
+                @show t
+                @show s_new
+
+            end
+            @assert leq_approx(radius(ball), radius(ball_new))
 
             pop!(bdry)
             @assert npoints(bdry) == 0
             move_to_front!(pts,k)
+            ball = ball_new
             t = s + 1
-            s = s2 + 1
+            s = s_new + 1
         else
             return ball
         end
     end
     return ball
+end
+
+
+function welzl!(pts, bdry, alg::WelzlClassic)
+    if isempty(pts) || ismaxlength(bdry)
+        return get_ball(bdry)
+    end
+
+    pts = copy(pts)
+    pt = pop!(pts)
+    ball = welzl!(pts, bdry, alg)
+
+    if isinside(pt, ball)
+        return ball
+    else
+        push_if_stable!(bdry, pt) # TODO deal with unstable points
+        return welzl!(pts, bdry, alg)
+    end
 end
