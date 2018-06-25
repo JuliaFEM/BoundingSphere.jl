@@ -6,7 +6,6 @@
 
     c,r = miniball(pts, WelzlPivot())
     ball = MB.SqBall(c, r^2)
-    @test MB.allinside(pts, ball, rtol=Inf)
     @test MB.allinside(pts, ball, atol=100eps(Float64))
 
     # not sure if WelzlMTF should give a good result

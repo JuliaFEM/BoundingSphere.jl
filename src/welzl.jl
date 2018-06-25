@@ -34,12 +34,12 @@ Subtypes must implement the following interface:
 * push_if_stable!(device, pt)::Bool :
 * pop!(device): Remove last point from the boundary.
 * get_ball(device)::SqBall : Get the last ball from the device.
-* npoints(device)::Int
-
+* length(device)::Int : Get the current count of boundary points
+* ismaxlength(device)::Bool: Check if there are dim+1 boundary points in the device
 """
 abstract type BoundaryDevice end
 
-Base.isempty(b::BoundaryDevice) = npoints(b) == 0
+Base.isempty(b::BoundaryDevice) = length(b) == 0
 
 """
     GaertnerBdry
@@ -68,7 +68,7 @@ function create_boundary_device(pts, alg)
     GaertnerBdry(centers, square_radii, projector, empty_center)
 end
 
-function npoints(b::GaertnerBdry)
+function Base.length(b::GaertnerBdry)
     @assert length(b.centers) ==
     length(b.square_radii)
 
@@ -76,7 +76,7 @@ function npoints(b::GaertnerBdry)
 end
 
 function push_if_stable!(b::GaertnerBdry, pt)
-    if npoints(b) == 0
+    if isempty(b)
         push!(b.square_radii, zero(eltype(pt)))
         push!(b.centers, pt)
         dim = length(pt)
@@ -98,7 +98,9 @@ function push_if_stable!(b::GaertnerBdry, pt)
 
     # should we use norm(residue) instead of z here?
     # seems more intuitive, OTOH z is used in the paper
-    isstable = abs(z) > eps(eltype(pt)) * r2
+    tol = eps(eltype(pt)) * max(r2, one(r2))
+    @assert !isnan(tol)
+    isstable = abs(z) > tol
     if isstable
 
         center_new  = center + (e/z) * residue
@@ -112,7 +114,7 @@ function push_if_stable!(b::GaertnerBdry, pt)
 end
 
 function Base.pop!(b::GaertnerBdry)
-    n = npoints(b)
+    n = length(b)
     pop!(b.centers)
     pop!(b.square_radii)
     if n >= 2
@@ -122,7 +124,7 @@ function Base.pop!(b::GaertnerBdry)
 end
 
 function get_ball(b::GaertnerBdry)
-    if npoints(b) == 0
+    if isempty(b)
         c = b.empty_center
         r2 = zero(eltype(c))
     else
@@ -134,11 +136,11 @@ end
 
 function ismaxlength(b::GaertnerBdry)
     dim = length(b.empty_center)
-    npoints(b) == dim + 1
+    length(b) == dim + 1
 end
 
 function welzl!(pts, bdry::BoundaryDevice, alg::WelzlMTF)
-    bdry_len = npoints(bdry)
+    bdry_len = length(bdry)
 
     support_count = 0
 
@@ -155,7 +157,7 @@ function welzl!(pts, bdry::BoundaryDevice, alg::WelzlMTF)
             isstable = push_if_stable!(bdry, pt)
             if isstable
                 ball, s = welzl!(pts_i, bdry, alg)
-                @assert isinside(pt, ball, rtol=1e-2)
+                @assert isinside(pt, ball, rtol=1e-2, atol=1e-10)
                 pop!(bdry)
                 move_to_front!(pts, i)
                 support_count = s + 1
@@ -163,7 +165,7 @@ function welzl!(pts, bdry::BoundaryDevice, alg::WelzlMTF)
         end
     end
 
-    @assert bdry_len == npoints(bdry)
+    @assert bdry_len == length(bdry)
     ball, support_count
 end
 
@@ -185,34 +187,35 @@ end
 function welzl!(pts, bdry, alg::WelzlPivot)
     t = 1
     alg_inner = WelzlMTF()
-    @assert npoints(bdry) == 0
+    @assert isempty(bdry)
     ball, s = welzl!(prefix(pts,t), bdry, alg_inner)
     for i in 1:alg.max_iterations
+        @assert s <= t
         e, k = find_max_excess(ball, pts, t+1)
 
         P = eltype(pts)
         F = eltype(P)
-        if e >  sqrt(eps(F)) # 0
+        if e >  eps(F)
             @assert t < k
             pt = pts[k]
             push_if_stable!(bdry, pt)
             ball_new, s_new = welzl!(prefix(pts,s), bdry, alg_inner)
             # @assert isinside(pt, ball_new, rtol=1e-6)
-            if !leq_approx(radius(ball), radius(ball_new))
-                @show e
-                @show radius(ball)
-                @show radius(ball_new)
-                @show i
-                @show k
-                @show s
-                @show t
-                @show s_new
+            # if !leq_approx(radius(ball), radius(ball_new))
+            #     @show e
+            #     @show radius(ball)
+            #     @show radius(ball_new)
+            #     @show i
+            #     @show k
+            #     @show s
+            #     @show t
+            #     @show s_new
 
-            end
-            @assert leq_approx(radius(ball), radius(ball_new))
+            # end
+            # @assert leq_approx(radius(ball), radius(ball_new))
 
             pop!(bdry)
-            @assert npoints(bdry) == 0
+            @assert isempty(bdry)
             move_to_front!(pts,k)
             ball = ball_new
             t = s + 1

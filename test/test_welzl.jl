@@ -74,12 +74,12 @@ function random_test(alg, npoints, dim;
                      rtol_inside=nothing,
                      atol_inside=nothing,
                      rtol_radius=nothing,
+                     allow_broken::Bool=true,
                      kw...)
     ball_ref, pts = create_ball_points(npoints, dim; kw...)
     @assert MB.allinside(pts, ball_ref)
     P = eltype(pts)
     F = eltype(P)
-
 
     c, r = miniball(pts, alg)
     ball = MB.SqBall(c, r^2)
@@ -89,10 +89,10 @@ function random_test(alg, npoints, dim;
         rtol_radius = Base.rtoldefault(r, r_ref)
     end
     issmall = r <= r_ref || isapprox(r, r_ref; rtol=rtol_radius)
-    if issmall
-        @test issmall
-    else
+    if allow_broken && !issmall
         @test_broken issmall
+    else
+        @test issmall
     end
 
     if rtol_inside == nothing
@@ -101,17 +101,16 @@ function random_test(alg, npoints, dim;
     if atol_inside == nothing
         atol_inside = 100eps(F)
     end
-    contains_all_points = MB.allinside(pts, ball, rtol=rtol_inside)
-    if contains_all_points
-        @test contains_all_points
-    else
+    contains_all_points = MB.allinside(pts, ball, rtol=rtol_inside, atol=atol_inside)
+    if allow_broken && !contains_all_points
         @test_broken contains_all_points
-        # @show length(pts)
-        # @show length(first(pts))
-        # @show ball_ref
-        # pts = map(Vector{BigFloat}, pts)
-        # @show pts
-        # @show ball
+        @show length(pts)
+        @show length(first(pts))
+        @show ball_ref
+        @show pts
+        @show ball
+    else
+        @test contains_all_points
     end
 end
 
@@ -179,6 +178,17 @@ end
     end
 end
 
+@testset "random Ritter" begin
+    srand(42)
+    for dim in 1:5
+        for npoints in 1:100
+            random_test(Ritter(), npoints, dim,
+                        rtol_radius=0.3,
+                       )
+        end
+    end
+end
+
 @testset "random WelzlPivot" begin
     srand(42)
     for _ in 1:1
@@ -195,18 +205,10 @@ end
                 random_test(WelzlPivot(), npoints, dim,
                             p_rep=0,
                             p_boundary=0)
-            end
-        end
-    end
-end
-# error()
 
-@testset "random Ritter" begin
-    srand(42)
-    for dim in 1:5
-        for npoints in 1:100
-            random_test(Ritter(), npoints, dim,
-                        rtol_radius=0.3)
+                random_test(WelzlPivot(), npoints, dim,
+                           )
+            end
         end
     end
 end
