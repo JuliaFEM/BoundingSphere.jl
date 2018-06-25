@@ -8,6 +8,8 @@ else
     using Test
 end
 
+include("helpers.jl")
 include("test_broken.jl")
 include("test_util.jl")
 include("test_welzl.jl")
+include("test_degenerate_examples.jl")

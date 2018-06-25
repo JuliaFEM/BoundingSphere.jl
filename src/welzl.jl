@@ -96,7 +96,7 @@ function push_if_stable!(b::GaertnerBdry, pt)
     e = sqdist(Qm, C) - r2
     z = 2*sqnorm(residue)
 
-    # should we use norm(residue) instead of z here?
+    # TODO should we use norm(residue) instead of z here?
     # seems more intuitive, OTOH z is used in the paper
     tol = eps(eltype(pt)) * max(r2, one(r2))
     @assert !isnan(tol)
@@ -195,25 +195,12 @@ function welzl!(pts, bdry, alg::WelzlPivot)
 
         P = eltype(pts)
         F = eltype(P)
-        if e >  eps(F)
+        if e >  eps(F)  # TODO should this be a parameter of the algorithm?
             @assert t < k
             pt = pts[k]
             push_if_stable!(bdry, pt)
             ball_new, s_new = welzl!(prefix(pts,s), bdry, alg_inner)
             # @assert isinside(pt, ball_new, rtol=1e-6)
-            # if !leq_approx(radius(ball), radius(ball_new))
-            #     @show e
-            #     @show radius(ball)
-            #     @show radius(ball_new)
-            #     @show i
-            #     @show k
-            #     @show s
-            #     @show t
-            #     @show s_new
-
-            # end
-            # @assert leq_approx(radius(ball), radius(ball_new))
-
             pop!(bdry)
             @assert isempty(bdry)
             move_to_front!(pts,k)
@@ -225,22 +212,4 @@ function welzl!(pts, bdry, alg::WelzlPivot)
         end
     end
     return ball
-end
-
-
-function welzl!(pts, bdry, alg::WelzlClassic)
-    if isempty(pts) || ismaxlength(bdry)
-        return get_ball(bdry)
-    end
-
-    pts = copy(pts)
-    pt = pop!(pts)
-    ball = welzl!(pts, bdry, alg)
-
-    if isinside(pt, ball)
-        return ball
-    else
-        push_if_stable!(bdry, pt) # TODO deal with unstable points
-        return welzl!(pts, bdry, alg)
-    end
 end
