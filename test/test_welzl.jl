@@ -7,7 +7,7 @@ function create_ball_points(npoints, dim; p_boundary=1, p_rep=1/sqrt(npoints))
     pts = P[]
     center = randn(dim)
     radius = 10*rand()
-    ball = MiniBall.SqBall(center, radius^2)
+    ball = MiniBallNext.SqBall(center, radius^2)
     while length(pts) < npoints
         dir = normalize!(randn(dim))
         r = if rand() < p_boundary

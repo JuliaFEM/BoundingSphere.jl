@@ -1,5 +1,5 @@
-using MiniBall
-const MB = MiniBall
+using MiniBallNext
+const MB = MiniBallNext
 using StaticArrays
 
 @static if VERSION < v"0.7.0-DEV.2005"

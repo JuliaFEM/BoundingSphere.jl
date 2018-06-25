@@ -1,4 +1,4 @@
-The MiniBall.jl package is licensed under the MIT "Expat" License:
+The MiniBallNext.jl package is licensed under the MIT "Expat" License:
 
 > Copyright (c) 2018: Jan Weidner.
 >

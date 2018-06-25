@@ -1,5 +1,5 @@
 __precompile__()
-module MiniBall
+module MiniBallNext
 
 using ArgCheck # TODO get rid of this
 
