@@ -11,6 +11,6 @@ center, radius = miniball(pts)
 
 using StaticArrays
 pts = [@SVector(randn(3)) for _ in 1:10] # use static arrays for performance
-alg = Ritter() # fast but inaccurate
+algorithm = Ritter() # fast but inaccurate
 center, radius = miniball(pts, algorithm) # customize algorithm
 ```

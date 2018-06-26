@@ -1,3 +1,13 @@
+"""
+    Ritter()
+
+## Pros
+* extremly fast
+* simple
+
+## Cons
+* Very inaccurate.
+"""
 struct Ritter <: MiniballAlgorithm end
 
 function max_distance_point(pts, pt1)
