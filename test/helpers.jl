@@ -1,36 +1,82 @@
 bernoulli(p) = rand() <= p
 
-function create_ball_points(npoints, dim; 
-                            p_boundary=1, 
+function poisson(lambda)
+    k = 0
+    p = exp(-lambda)
+    s = p
+    x = rand()
+    while x > s
+        k += 1
+        p = p * lambda / k
+        s += p
+    end
+    k
+end
+
+struct Householder{T} <: AbstractMatrix{T}
+    v::Vector{T}
+end
+
+function Base.size(h::Householder)
+    l = length(h.v)
+    l,l
+end
+
+function Base.getindex(h::Householder, i, j)
+    I[i,j] - 2*h.v[i]*h.v[j]
+end
+
+function random_householder(dim)
+    v = randn(dim)
+    normalize!(v)
+    Householder(v)
+end
+
+function random_orthogonal(dim)
+    ret = if dim == 1
+        [(-1.)^bernoulli(0.5)]
+    else
+        dim1 = dim - 1
+        m = random_householder(dim)
+        rot1 = random_orthogonal(dim1)
+        m * [rot1 zeros(dim1, 1); zeros(1, dim1) 1]
+    end
+    @assert ret * ret' ≈ eye(dim)
+    ret
+end
+
+function random_embedding(dim_target, dim_src)
+    inc = eye(dim_target, dim_src)
+    rot = random_orthogonal(dim_target)
+    M = SMatrix{dim_target, dim_src}
+    M(rot * inc)
+end
+
+function create_ball_points(npoints, dim_src;
+                            codim = poisson(0.3),
+                            p_boundary=1,
                             p_rep=1/sqrt(npoints),
                             p_shuffle=0.5,
                            )
+    dim_target = dim_src + codim
+    @assert dim_src <= dim_target
     @assert 0 <= p_boundary <= 1
     @assert 0 <= p_rep <= 1
     @assert 0 <= p_shuffle <= 1
     F = Float64
-    P = SVector{dim, F}
+    P = SVector{dim_src, F}
     pts = P[]
-    center = randn(dim)
+    center = randn(dim_src)
     R = 10*rand()
-    ball = MiniBallNext.SqBall(center, R^2)
+    ball = MB.SqBall(center, R^2)
     while length(pts) < npoints
-        dir = normalize!(randn(dim))
+        dir = normalize!(randn(dim_src))
         r = if bernoulli(p_boundary)
             R
         else
             R*rand()
         end
-        @assert norm(dir) ≈ 1
-        @assert r <= R
-        pt = center + dir*r
-        if !MB.isinside(pt, ball)
-            R2new = MB.sqdist(center, pt)
-            @assert R2new ≈ ball.sqradius
-            @assert R2new >= ball.sqradius
-            ball = MB.SqBall(center, R2new)
-        end
-        @assert MB.isinside(pt, ball)
+        pt = center + r*dir
         while true
             push!(pts, pt)
             bernoulli(p_rep) || break
@@ -40,14 +86,33 @@ function create_ball_points(npoints, dim;
     bernoulli(p_shuffle) && shuffle!(pts)
     @assert length(pts) == npoints
     @assert eltype(pts) == P
-    ball, pts
+    if dim_target > dim_src
+        embedding = random_embedding(dim_target, dim_src)
+        center = embedding * center
+        pts = map(pt -> embedding*pt, pts)
+        ball = MB.SqBall(center, R^2)
+    end
+    make_ball_containing_pts(ball, pts)
+end
+
+function make_ball_containing_pts(ball, pts)
+    R2 = ball.sqradius
+    center = ball.center
+    for pt in pts
+        R2pt = MB.sqdist(pt, center)
+        if R2pt > R2
+            @assert R2pt ≈ R2
+            R2 = R2pt
+        end
+    end
+    MB.SqBall(center, R2), pts
 end
 
 function random_test(alg, npoints, dim; 
                      rtol_inside=nothing,
                      atol_inside=nothing,
                      rtol_radius=nothing,
-                     allow_broken::Bool=true,
+                     allow_broken::Bool=false,
                      kw...)
     ball_ref, pts = create_ball_points(npoints, dim; kw...)
     @assert MB.allinside(pts, ball_ref)

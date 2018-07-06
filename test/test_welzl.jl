@@ -95,19 +95,22 @@ end
         for npoints in 1:100
             random_test(Ritter(), npoints, dim,
                         rtol_radius=0.3,
+                        allow_broken=false
                        )
         end
     end
 end
 
 @testset "random WelzlPivot" begin
+
     @testset "random WelzlPivot small" begin
         srand(42)
         alg = WelzlPivot()
         for dim in 1:3
             for npoints in 1:10
                     random_test(alg, npoints, dim,
-                                allow_broken=false)
+                                allow_broken=false,
+                                codim=0)
             end
         end
     end
@@ -120,6 +123,7 @@ end
                     random_test(alg, npoints, dim,
                                 p_boundary=0,
                                 p_rep=0,
+                                codim=0,
                                 allow_broken=false)
             end
         end
@@ -133,18 +137,25 @@ end
                 for npoints in 1:100
                     random_test(alg, npoints, dim,
                                 p_rep=1/sqrt(npoints),
-                                p_boundary=0.5)
+                                p_boundary=0.5,
+                                allow_broken=true)
     
                     random_test(alg, npoints, dim,
                                 p_rep=1/sqrt(npoints),
-                                p_boundary=1)
+                                p_boundary=1,
+                                allow_broken=true)
     
                     random_test(alg, npoints, dim,
                                 p_rep=0,
-                                p_boundary=0)
+                                p_boundary=0,
+                                allow_broken=true)
     
                     random_test(alg, npoints, dim,
-                               )
+                                allow_broken=true)
+
+                    random_test(alg, npoints, dim,
+                                codim=poisson(3),
+                                allow_broken=true)
                 end
             end
         end
@@ -154,6 +165,8 @@ end
 @testset "random WelzlMTF" begin
     srand(42)
     for dim in 1:10, npoints in 1:20
-        random_test(WelzlMTF(), npoints, dim, p_rep=0, p_boundary=0)
+        random_test(WelzlMTF(), npoints, dim,
+                    codim=0, p_rep=0, p_boundary=0,
+                    allow_broken=false)
     end
 end
