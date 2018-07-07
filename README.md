@@ -1,7 +1,7 @@
 # MiniBallNext
 
 [![Build Status](https://travis-ci.org/jw3126/MiniBallNext.jl.svg?branch=master)](https://travis-ci.org/jw3126/MiniBallNext.jl)
-[![codecov.io](https://codecov.io/github/jw3126/MiniBallNext.jl/coverage.svg?branch=master)](http://codecov.io/github/jw3126/MiniBallNext.jl?branch=master)
+[![codecov](https://codecov.io/gh/jw3126/MiniBallNext.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jw3126/MiniBallNext.jl)
 ## Usage
 ```julia
 using MiniBallNext
