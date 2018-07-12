@@ -1,5 +1,5 @@
 __precompile__()
-module MiniBallNext
+module BoundingSphere
 
 include("api.jl")
 include("boundary.jl")

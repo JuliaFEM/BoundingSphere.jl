@@ -1,6 +1,5 @@
-using MiniBallNext
-using MiniBallNext
-const MB = MiniBallNext
+using BoundingSphere
+const MB = BoundingSphere
 using BenchmarkTools
 using StaticArrays
 
