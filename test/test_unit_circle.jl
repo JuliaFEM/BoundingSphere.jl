@@ -1,7 +1,7 @@
 using StaticArrays
 
 @testset "stastical unit circle test" begin
-    pts = Array{Array{Float64,1},1}(5)
+    pts = Vector{SVector{2,Float64}}(5)
     for k in 1:100000
         for i in 1:4
             angle = rand()*2*pi
@@ -14,7 +14,7 @@ using StaticArrays
         end
 
         mb = miniball(pts)
-        origo = isapprox(mb[1],[0.0;0.0];atol=10*eps())
+        origo = isapprox(mb[1],[0.0;0.0];atol=sqrt(eps()))
         if origo
             @test origo
         else
