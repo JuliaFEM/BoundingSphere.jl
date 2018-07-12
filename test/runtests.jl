@@ -1,5 +1,5 @@
-using MiniBallNext
-const MB = MiniBallNext
+using BoundingSphere
+const MB = BoundingSphere
 using StaticArrays
 
 @static if VERSION < v"0.7.0-DEV.2005"

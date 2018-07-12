@@ -4,7 +4,7 @@
 [![codecov.io](https://codecov.io/github/jw3126/MiniBallNext.jl/coverage.svg?branch=master)](http://codecov.io/github/jw3126/MiniBallNext.jl?branch=master)
 ## Usage
 ```julia
-using MiniBallNext
+using BoundingSphere
 
 pts = [randn(3) for _ in 1:10]
 center, radius = miniball(pts)
