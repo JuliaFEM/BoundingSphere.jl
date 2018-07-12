@@ -41,7 +41,7 @@ build_script:
 # Need to convert from shallow to complete for Pkg.clone to work
   - IF EXIST .git\shallow (git fetch --unshallow)
   - C:\projects\julia\bin\julia -e "versioninfo();
-      Pkg.clone(pwd(), \"MiniBallNext\"); Pkg.build(\"MiniBallNext\")"
+      Pkg.clone(pwd(), \"BoundingSphere\"); Pkg.build(\"BoundingSphere\")"
 
 test_script:
-  - C:\projects\julia\bin\julia -e "Pkg.test(\"MiniBallNext\")"
+  - C:\projects\julia\bin\julia -e "Pkg.test(\"BoundingSphere\")"
