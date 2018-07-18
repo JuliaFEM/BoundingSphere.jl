@@ -10,15 +10,15 @@ using StaticArrays
             push!(inputs, pts)
         end
     end
-    for A in subtypes(MB.MiniballAlgorithm)
+    for A in subtypes(MB.BoundingSphereAlg)
         for pts in inputs
             alg = A()
-            c, r = miniball(pts, alg)
+            c, r = boundingsphere(pts, alg)
             P = eltype(pts)
             F = eltype(P)
             @test typeof(c) == P
             @test typeof(r) == F
-            @inferred miniball(pts, alg)
+            @inferred boundingsphere(pts, alg)
             @test norm(c) < sqrt(eps(F))
             @test r ≈ 1
         end
@@ -74,7 +74,7 @@ end
 
         # support set suffices
         pts2 = pts[1:support_count]
-        c, r = miniball(pts2, alg)
+        c, r = boundingsphere(pts2, alg)
         @test MB.center(ball) ≈ c
         @test MB.radius(ball) ≈ r
 
@@ -83,7 +83,7 @@ end
         if length(pts3) > 1
             index = rand(1:length(pts3))
             deleteat!(pts3, index)
-            c, r = miniball(pts3, alg)
+            c, r = boundingsphere(pts3, alg)
             @test r < MB.radius(ball)
         end
     end
