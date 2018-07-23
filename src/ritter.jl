@@ -8,7 +8,7 @@
 ## Cons
 * Very inaccurate.
 """
-struct Ritter <: MiniballAlgorithm end
+struct Ritter <: BoundingSphereAlg end
 
 function max_distance_point(pts, pt1)
     pt_best = first(pts)
@@ -45,4 +45,4 @@ end
     c, r
 end
 
-miniball(pts, alg::Ritter) = ritter(pts)
+boundingsphere(pts, alg::Ritter) = ritter(pts)

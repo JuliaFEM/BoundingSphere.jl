@@ -119,7 +119,7 @@ function random_test(alg, npoints, dim;
     P = eltype(pts)
     F = eltype(P)
 
-    c, r = miniball(pts, alg)
+    c, r = boundingsphere(pts, alg)
     ball = MB.SqBall(c, r^2)
 
     r_ref = MB.radius(ball_ref)

@@ -1,11 +1,11 @@
-export miniball
+export boundingsphere
 
 export WelzlMTF
 export WelzlPivot
 export Ritter
 
 
-abstract type MiniballAlgorithm end
+abstract type BoundingSphereAlg end
 
 """
     WelzlMTF()
@@ -20,7 +20,7 @@ In almost all situations it is better to use [`WelzlPivot`](@ref) instead.
 ## Cons
 * Prone to numerical stability issues
 """
-struct WelzlMTF <: MiniballAlgorithm end
+struct WelzlMTF <: BoundingSphereAlg end
 
 """
     WelzlPivot(;max_iterations=1000)
@@ -33,7 +33,7 @@ Welzl algorithm with pivoting. See Algorithm II in https://people.inf.ethz.ch/ga
 ## Cons
 * In very rare cases can be numerically instable
 """
-struct WelzlPivot <: MiniballAlgorithm
+struct WelzlPivot <: BoundingSphereAlg
     max_iterations::Int
 end
 
@@ -42,7 +42,7 @@ function WelzlPivot(;max_iterations=1000)
 end
 
 """
-    center, radius = miniball(pts [, algorithm=WelzlPivot()])
+    center, radius = boundingsphere(pts [, algorithm=WelzlPivot()])
 
 Compute the smallest sphere that contains each point in `pts`.
 
@@ -51,9 +51,9 @@ Compute the smallest sphere that contains each point in `pts`.
 * pts: A list of points. Points should be vectors with floating point entries.
 * algorithm: An optional algorithm to do the computation. See names(BoundingSphere) to get
 """
-function miniball end
+function boundingsphere end
 
-function miniball!(pts, alg::WelzlMTF=WelzlMTF())
+function boundingsphere!(pts, alg::WelzlMTF=WelzlMTF())
     bdry = create_boundary_device(pts, alg)
     ball, support_count = welzl!(pts, bdry, alg)
     r = radius(ball)
@@ -61,7 +61,7 @@ function miniball!(pts, alg::WelzlMTF=WelzlMTF())
     c, r
 end
 
-function miniball!(pts, alg::MiniballAlgorithm)
+function boundingsphere!(pts, alg::BoundingSphereAlg)
     bdry = create_boundary_device(pts, alg)
     ball = welzl!(pts, bdry, alg)
     r = radius(ball)
@@ -69,6 +69,6 @@ function miniball!(pts, alg::MiniballAlgorithm)
     c, r
 end
 
-@noinline function miniball(pts, alg::MiniballAlgorithm=WelzlMTF())
-    miniball!(copy(pts), alg)
+@noinline function boundingsphere(pts, alg::BoundingSphereAlg=WelzlMTF())
+    boundingsphere!(copy(pts), alg)
 end
