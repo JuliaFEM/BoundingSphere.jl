@@ -1,3 +1,6 @@
+# This file is a part of JuliaFEM.
+# License is MIT: see https://github.com/JuliaFEM/BoundingSphere.jl/blob/master/LICENSE
+
 using BoundingSphere
 const MB = BoundingSphere
 using BenchmarkTools
