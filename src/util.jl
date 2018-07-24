@@ -1,3 +1,6 @@
+# This file is a part of JuliaFEM.
+# License is MIT: see https://github.com/JuliaFEM/BoundingSphere.jl/blob/master/LICENSE
+
 function prefix(pts, i)
     inds = eachindex(pts)
     index = first(inds) : i

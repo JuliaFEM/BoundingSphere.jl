@@ -1,3 +1,6 @@
+# This file is a part of JuliaFEM.
+# License is MIT: see https://github.com/JuliaFEM/BoundingSphere.jl/blob/master/LICENSE
+
 struct ProjectorStack{P <: AbstractVector}
     # matrix that is decomposed into Σ v_i ⊗ v_i* for
     # an orthonormal system v_i

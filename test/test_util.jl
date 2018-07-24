@@ -1,3 +1,6 @@
+# This file is a part of JuliaFEM.
+# License is MIT: see https://github.com/JuliaFEM/BoundingSphere.jl/blob/master/LICENSE
+
 @testset "prefix" begin
     @test MB.prefix(["a", "b", "c", "d"], 0) == []
     @test MB.prefix(["a", "b", "c", "d"], 1) == ["a"]

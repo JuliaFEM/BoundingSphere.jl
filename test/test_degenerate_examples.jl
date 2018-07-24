@@ -1,3 +1,6 @@
+# This file is a part of JuliaFEM.
+# License is MIT: see https://github.com/JuliaFEM/BoundingSphere.jl/blob/master/LICENSE
+
 @testset "2 points 2d" begin
 
     ball_ref = MB.SqBall{Array{Float64,1},Float64}([1.79979, -0.419288], 38.387992027461046)
