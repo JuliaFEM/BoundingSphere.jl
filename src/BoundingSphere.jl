@@ -4,6 +4,13 @@
 __precompile__()
 module BoundingSphere
 
+if VERSION < v"0.7-"
+else
+    using Random
+    using LinearAlgebra
+    using Statistics: middle
+end
+
 include("api.jl")
 include("boundary.jl")
 include("geometry.jl")

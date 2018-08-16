@@ -67,7 +67,7 @@ end
 end
 
 @testset "random support_count" begin
-    srand(42)
+    seed!(42)
     alg = WelzlMTF()
     for dim in 1:10, npoints in 1:20
         ball, pts = create_ball_points(dim, npoints, p_rep=0, p_boundary=0)
@@ -93,7 +93,7 @@ end
 end
 
 @testset "random Ritter" begin
-    srand(42)
+    seed!(42)
     for dim in 1:5
         for npoints in 1:100
             random_test(Ritter(), npoints, dim,
@@ -107,7 +107,7 @@ end
 @testset "random WelzlPivot" begin
 
     @testset "random WelzlPivot small" begin
-        srand(42)
+        seed!(42)
         alg = WelzlPivot()
         for dim in 1:3
             for npoints in 1:10
@@ -119,7 +119,7 @@ end
     end
 
     @testset "non degenerate" begin
-        srand(42)
+        seed!(42)
         alg = WelzlPivot()
         for dim in 1:10
             for npoints in 1:100
@@ -133,7 +133,7 @@ end
     end
     
     @testset "nasty" begin
-        srand(42)
+        seed!(42)
         alg = WelzlPivot()
         for _ in 1:1
             for dim in 1:10
@@ -166,7 +166,7 @@ end
 end
 
 @testset "random WelzlMTF" begin
-    srand(42)
+    seed!(42)
     for dim in 1:10, npoints in 1:20
         random_test(WelzlMTF(), npoints, dim,
                     codim=0, p_rep=0, p_boundary=0,
