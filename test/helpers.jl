@@ -44,12 +44,12 @@ function random_orthogonal(dim)
         rot1 = random_orthogonal(dim1)
         m * [rot1 zeros(dim1, 1); zeros(1, dim1) 1]
     end
-    @assert ret * ret' ≈ eye(dim)
+    @assert ret * ret' ≈ Matrix(I,dim,dim)
     ret
 end
 
 function random_embedding(dim_target, dim_src)
-    inc = eye(dim_target, dim_src)
+    inc = Matrix(I,dim_target, dim_src)
     rot = random_orthogonal(dim_target)
     M = SMatrix{dim_target, dim_src}
     M(rot * inc)
@@ -127,7 +127,7 @@ function random_test(alg, npoints, dim;
 
     r_ref = MB.radius(ball_ref)
     if rtol_radius == nothing
-        rtol_radius = Base.rtoldefault(r, r_ref)
+        rtol_radius = sqrt(eps(max(r, r_ref)))
     end
     issmall = r <= r_ref || isapprox(r, r_ref; rtol=rtol_radius)
     if allow_broken && !issmall
