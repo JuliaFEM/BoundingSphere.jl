@@ -1,5 +1,6 @@
 # BoundingSphere
 
+[![][gitter-img]][gitter-url]
 [![][travis-img]][travis-url]
 [![][pkg-0.6-img]][pkg-0.6-url]
 [![][pkg-0.7-img]][pkg-0.7-url]
@@ -7,6 +8,7 @@
 [![][docs-stable-img]][docs-stable-url]
 [![][docs-latest-img]][docs-latest-url]
 [![][issues-img]][issues-url]
+[![][appveyor-img]][appveyor-url]
 
 Package contains algorithms to calculate smallest enclosing sphere for a given
 set of points in N dimensions.
@@ -27,10 +29,11 @@ pts = [@SVector(randn(3)) for _ in 1:10] # use static arrays for performance
 algorithm = Ritter() # fast but inaccurate
 center, radius = boundingsphere(pts, algorithm) # customize algorithm
 ```
+[gitter-img]: https://badges.gitter.im/Join%20Chat.svg
+[gitter-url]: https://gitter.im/JuliaFEM/JuliaFEM.jl
 
 [contrib-url]: https://juliafem.github.io/BoundingSphere.jl/latest/man/contributing/
 [discourse-tag-url]: https://discourse.julialang.org/tags/boundingsphere
-[gitter-url]: https://gitter.im/JuliaFEM/JuliaFEM.jl
 
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
 [docs-latest-url]: https://juliafem.github.io/BoundingSphere.jl/latest
@@ -51,3 +54,6 @@ center, radius = boundingsphere(pts, algorithm) # customize algorithm
 [pkg-0.6-url]: http://pkg.julialang.org/?pkg=BoundingSphere&ver=0.6
 [pkg-0.7-img]: http://pkg.julialang.org/badges/BoundingSphere_0.7.svg
 [pkg-0.7-url]: http://pkg.julialang.org/?pkg=BoundingSphere&ver=0.7
+
+[appveyor-img]: https://ci.appveyor.com/api/projects/status/s1vk9v0sxbmr2pen/branch/master?svg=true
+[appveyor-url]: https://ci.appveyor.com/project/JuliaFEM/boundingsphere-jl/branch/master
