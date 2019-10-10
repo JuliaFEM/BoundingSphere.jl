@@ -1,6 +1,6 @@
 name = "BoundingSphere"
 uuid = "747eb165-47b8-53f2-ad32-9704a7dfc50a"
-version = "0.1.1"
+version = "0.2.0"
 
 [deps]
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
